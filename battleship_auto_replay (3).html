@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Battleship</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#03080f;display:flex;justify-content:center;padding:20px}
+#app{background:#07111f;color:#90bdd4;font-family:'Courier New',monospace;padding:14px;border-radius:12px;width:100%;max-width:620px}
+h1{text-align:center;font-size:18px;letter-spacing:4px;color:#4fc3f7;margin-bottom:2px;font-weight:700}
+.sub{text-align:center;font-size:9px;color:#37474f;letter-spacing:3px;margin-bottom:12px}
+.step-banner{background:#0d1f35;border:1px solid #1a3a5c;border-radius:6px;padding:8px 12px;text-align:center;margin-bottom:10px;min-height:40px}
+.step-num{font-size:10px;color:#37474f;letter-spacing:2px}
+.step-txt{font-size:13px;color:#80cbc4;margin-top:2px;letter-spacing:1px}
+.boards{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.bwrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.blabel{font-size:9px;letter-spacing:3px;color:#546e7a;text-transform:uppercase}
+.bplayer{color:#4fc3f7}
+.benemy{color:#ef9a9a}
+.col-hd{display:flex;gap:1px;padding-left:18px}
+.col-hd span{width:26px;height:14px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#263238}
+.row-wrap{display:flex;gap:0}
+.row-hd{display:flex;flex-direction:column;gap:1px}
+.row-hd span{width:16px;height:26px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#263238}
+.grid{display:grid;grid-template-columns:repeat(10,26px);grid-template-rows:repeat(10,26px);gap:1px}
+.cell{width:26px;height:26px;border-radius:2px;background:#0a1e33;border:1px solid #112840;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;transition:all 0.2s}
+.s{background:#1a3d28;border-color:#2d6a46}
+.h{background:#b71c1c;border-color:#ef5350;color:#ffcdd2}
+.m{background:#0d3b60;border-color:#1976d2;color:#4fc3f7}
+.k{background:#6a0f0f;border-color:#c62828;color:#ef9a9a}
+.flash{background:#fff176 !important;border-color:#f9a825 !important;color:#333 !important}
+.controls{display:flex;gap:8px;justify-content:center;margin:10px 0;flex-wrap:wrap}
+.btn{padding:7px 14px;border:1px solid #1a3a5c;border-radius:4px;background:#0d2137;color:#80cbc4;cursor:pointer;font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;transition:all 0.15s}
+.btn:hover{border-color:#4fc3f7;color:#4fc3f7}
+.btn:disabled{opacity:0.3;cursor:default}
+.btn.active{border-color:#4caf50;color:#4caf50}
+.progress{display:flex;align-items:center;gap:8px;margin:0 0 10px}
+.pbar-bg{flex:1;height:4px;background:#0d2137;border-radius:2px;overflow:hidden}
+.pbar{height:4px;background:#4fc3f7;border-radius:2px;transition:width 0.3s}
+.pct{font-size:9px;color:#37474f;min-width:30px;text-align:right}
+.legend{display:flex;gap:12px;justify-content:center;margin:6px 0;flex-wrap:wrap}
+.lg{display:flex;align-items:center;gap:4px;font-size:9px;color:#546e7a;letter-spacing:1px}
+.lg-sq{width:10px;height:10px;border-radius:2px}
+.scores{display:flex;gap:20px;justify-content:center;margin-top:8px}
+.sc{text-align:center}
+.sc-v{font-size:18px;font-weight:700}
+.sc-l{font-size:8px;color:#37474f;letter-spacing:2px;text-transform:uppercase}
+.a-val{color:#4fc3f7}.b-val{color:#ef9a9a}
+.over-msg{text-align:center;padding:10px;border-radius:6px;font-size:14px;letter-spacing:2px;font-weight:700;margin-top:8px}
+.loading{text-align:center;padding:30px;font-size:11px;color:#37474f;letter-spacing:3px}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <h1>⚓ BATTLESHIP</h1>
+  <div class="sub">AUTO-PLAY REPLAY — FLEET A vs FLEET B</div>
+
+  <div class="step-banner">
+    <div class="step-num" id="snum">STEP 0 / 0</div>
+    <div class="step-txt" id="stxt">Simulating battle…</div>
+  </div>
+
+  <div class="progress">
+    <div class="pbar-bg"><div class="pbar" id="pbar" style="width:0%"></div></div>
+    <div class="pct" id="pct">0%</div>
+  </div>
+
+  <div class="boards">
+    <div class="bwrap">
+      <div class="blabel bplayer">⬡ FLEET A</div>
+      <div class="col-hd" id="aColHd"></div>
+      <div class="row-wrap">
+        <div class="row-hd" id="aRowHd"></div>
+        <div class="grid" id="agrid"><div class="loading">LOADING…</div></div>
+      </div>
+    </div>
+    <div class="bwrap">
+      <div class="blabel benemy">⬡ FLEET B</div>
+      <div class="col-hd" id="bColHd"></div>
+      <div class="row-wrap">
+        <div class="row-hd" id="bRowHd"></div>
+        <div class="grid" id="bgrid"><div class="loading">LOADING…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="lg"><div class="lg-sq s"></div>SHIP</div>
+    <div class="lg"><div class="lg-sq h"></div>HIT</div>
+    <div class="lg"><div class="lg-sq m"></div>MISS</div>
+    <div class="lg"><div class="lg-sq k"></div>SUNK</div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="btnFirst" onclick="goTo(0)">|◀ FIRST</button>
+    <button class="btn" id="btnPrev" onclick="goTo(cur-1)">◀ PREV</button>
+    <button class="btn active" id="btnPlay" onclick="togglePlay()">▶ PLAY</button>
+    <button class="btn" id="btnNext" onclick="goTo(cur+1)">NEXT ▶</button>
+    <button class="btn" id="btnLast" onclick="goTo(states.length-1)">LAST ▶|</button>
+  </div>
+
+  <div class="scores">
+    <div class="sc"><div class="sc-v a-val" id="sc-a">0</div><div class="sc-l">Fleet A Sunk</div></div>
+    <div class="sc"><div class="sc-v" id="sc-step" style="color:#37474f">—</div><div class="sc-l">Shot #</div></div>
+    <div class="sc"><div class="sc-v b-val" id="sc-b">0</div><div class="sc-l">Fleet B Sunk</div></div>
+  </div>
+  <div id="over-msg"></div>
+</div>
+
+<script>
+const COLS='ABCDEFGHIJ'.split('');
+const SHIPS=[{n:'Carrier',l:5},{n:'Battleship',l:4},{n:'Cruiser',l:3},{n:'Submarine',l:3},{n:'Destroyer',l:2}];
+
+function mkGrid(){return Array.from({length:10},()=>new Int8Array(10));}
+
+function placeFleet(){
+  const grid=mkGrid();
+  const shipCells={};
+  SHIPS.forEach((s,i)=>{
+    let ok=false;
+    while(!ok){
+      const o=Math.random()<0.5?'H':'V';
+      const r=Math.floor(Math.random()*10),c=Math.floor(Math.random()*10);
+      const cells=[];
+      for(let k=0;k<s.l;k++) cells.push(o==='H'?[r,c+k]:[r+k,c]);
+      if(cells.every(([r,c])=>r>=0&&r<10&&c>=0&&c<10&&grid[r][c]===0)){
+        const id=i+1;cells.forEach(([r,c])=>grid[r][c]=id);
+        shipCells[id]=cells;ok=true;
+      }
+    }
+  });
+  return{grid,shipCells};
+}
+
+function isSunk(id,grid,shots){
+  for(let r=0;r<10;r++)for(let c=0;c<10;c++)if(grid[r][c]===id&&shots[r][c]!==2)return false;
+  return true;
+}
+
+function aiPick(grid,shots,stack){
+  if(stack.length>0){
+    while(stack.length>0){
+      const[r,c]=stack[stack.length-1];
+      if(shots[r][c]===0)return stack.pop();
+      stack.pop();
+    }
+  }
+  let r,c;
+  do{r=Math.floor(Math.random()*10);c=Math.floor(Math.random()*10);}while(shots[r][c]!==0);
+  return[r,c];
+}
+
+function simulate(){
+  const A=placeFleet();
+  const B=placeFleet();
+  const shotsOnA=mkGrid();
+  const shotsOnB=mkGrid();
+  const stackA=[],stackB=[];
+  const states=[];
+
+  function snap(turn,r,c,wasHit,msg,sunkId,aSunk,bSunk){
+    states.push({
+      aGrid:A.grid.map(row=>[...row]),
+      bGrid:B.grid.map(row=>[...row]),
+      shotsOnA:shotsOnA.map(row=>[...row]),
+      shotsOnB:shotsOnB.map(row=>[...row]),
+      turn,shot:[r,c],wasHit,msg,sunkId,aSunk,bSunk
+    });
+  }
+
+  let aSunk=0,bSunk=0;
+
+  states.push({
+    aGrid:A.grid.map(row=>[...row]),
+    bGrid:B.grid.map(row=>[...row]),
+    shotsOnA:shotsOnA.map(row=>[...row]),
+    shotsOnB:shotsOnB.map(row=>[...row]),
+    turn:null,shot:null,wasHit:false,
+    msg:'Battle begins! Fleet A fires first.',
+    sunkId:null,aSunk:0,bSunk:0
+  });
+
+  let winner=null;
+  for(let round=0;round<200&&!winner;round++){
+    ['A','B'].forEach(t=>{
+      if(winner)return;
+      const shootGrid=t==='A'?B.grid:A.grid;
+      const shots=t==='A'?shotsOnB:shotsOnA;
+      const stack=t==='A'?stackB:stackA;
+      const[r,c]=aiPick(shootGrid,shots,stack);
+      const hit=shootGrid[r][c]>0;
+      shots[r][c]=hit?2:1;
+      let sunkId=null,msg='';
+      if(hit){
+        const id=shootGrid[r][c];
+        if(isSunk(id,shootGrid,shots)){
+          sunkId=id;
+          if(t==='A'){bSunk++;}else{aSunk++;}
+          msg=`Fleet ${t} SUNK the enemy ${SHIPS[id-1].n}! (${t==='A'?bSunk:aSunk}/5)`;
+          const dirs=[[0,1],[0,-1],[1,0],[-1,0]];
+          dirs.forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc;if(nr>=0&&nr<10&&nc>=0&&nc<10&&shots[nr][nc]===0)stack.push([nr,nc]);});
+        }else{
+          msg=`Fleet ${t} HIT at ${COLS[c]}${r+1}!`;
+          const dirs=[[0,1],[0,-1],[1,0],[-1,0]];
+          dirs.forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc;if(nr>=0&&nr<10&&nc>=0&&nc<10&&shots[nr][nc]===0)stack.push([nr,nc]);});
+        }
+      }else{msg=`Fleet ${t} missed at ${COLS[c]}${r+1}.`;}
+      snap(t,r,c,hit,msg,sunkId,aSunk,bSunk);
+      const totalSunk=t==='A'?bSunk:aSunk;
+      if(totalSunk===5){winner=t;}
+    });
+  }
+  states[states.length-1].winner=winner;
+  return{states,winner};
+}
+
+let states=[],cur=0,playTimer=null,playSpeed=800;
+
+function buildHeaders(){
+  ['aColHd','bColHd'].forEach(id=>{
+    const el=document.getElementById(id);el.innerHTML='';
+    COLS.forEach(c=>{const s=document.createElement('span');s.textContent=c;el.appendChild(s);});
+  });
+  ['aRowHd','bRowHd'].forEach(id=>{
+    const el=document.getElementById(id);el.innerHTML='';
+    for(let i=1;i<=10;i++){const s=document.createElement('span');s.textContent=i;el.appendChild(s);}
+  });
+}
+
+function renderBoard(gridId,shipGrid,shots,flashCell,showShips){
+  const g=document.getElementById(gridId);g.innerHTML='';
+  for(let r=0;r<10;r++)for(let c=0;c<10;c++){
+    const div=document.createElement('div');
+    div.className='cell';
+    const s=shots[r][c];
+    const shipId=shipGrid[r][c];
+    if(flashCell&&flashCell[0]===r&&flashCell[1]===c){
+      div.classList.add('flash');
+    }else if(s===2){
+      div.classList.add(isSunk2(shipId,shipGrid,shots)?'k':'h');
+      div.textContent=isSunk2(shipId,shipGrid,shots)?'✕':'◉';
+    }else if(s===1){div.classList.add('m');div.textContent='·';}
+    else if(showShips&&shipId>0){div.classList.add('s');}
+    g.appendChild(div);
+  }
+}
+
+function isSunk2(id,grid,shots){
+  for(let r=0;r<10;r++)for(let c=0;c<10;c++)if(grid[r][c]===id&&shots[r][c]!==2)return false;
+  return true;
+}
+
+function goTo(n){
+  n=Math.max(0,Math.min(n,states.length-1));
+  cur=n;
+  const st=states[n];
+  const pct=Math.round((n/(states.length-1))*100)||0;
+  document.getElementById('pbar').style.width=pct+'%';
+  document.getElementById('pct').textContent=pct+'%';
+  document.getElementById('snum').textContent=`STEP ${n} / ${states.length-1}`;
+  document.getElementById('stxt').textContent=st.msg||'';
+  document.getElementById('sc-a').textContent=st.aSunk;
+  document.getElementById('sc-b').textContent=st.bSunk;
+  document.getElementById('sc-step').textContent=n>0?n:'—';
+
+  const flashA=st.turn==='B'&&st.shot?st.shot:null;
+  const flashB=st.turn==='A'&&st.shot?st.shot:null;
+  renderBoard('agrid',st.aGrid,st.shotsOnA,flashA,true);
+  renderBoard('bgrid',st.bGrid,st.shotsOnB,flashB,n===states.length-1);
+
+  if(n===states.length-1&&st.winner){
+    document.getElementById('over-msg').innerHTML=`<div class="over-msg" style="color:${st.winner==='A'?'#4fc3f7':'#ef9a9a'};border:1px solid ${st.winner==='A'?'#4fc3f7':'#ef9a9a'};background:${st.winner==='A'?'#051525':'#1f0505'}">⚓ FLEET ${st.winner} WINS — All enemy ships sunk in ${states.length-1} shots!</div>`;
+    stopPlay();
+  }else{document.getElementById('over-msg').innerHTML='';}
+}
+
+function togglePlay(){
+  if(playTimer){stopPlay();}else{startPlay();}
+}
+
+function startPlay(){
+  document.getElementById('btnPlay').textContent='⏸ PAUSE';
+  document.getElementById('btnPlay').style.color='#ffa726';
+  document.getElementById('btnPlay').style.borderColor='#ffa726';
+  playTimer=setInterval(()=>{
+    if(cur>=states.length-1){stopPlay();return;}
+    goTo(cur+1);
+  },playSpeed);
+}
+
+function stopPlay(){
+  clearInterval(playTimer);playTimer=null;
+  document.getElementById('btnPlay').textContent='▶ PLAY';
+  document.getElementById('btnPlay').style.color='#4caf50';
+  document.getElementById('btnPlay').style.borderColor='#4caf50';
+}
+
+// Defer simulation so the page renders the loading state first
+setTimeout(()=>{
+  const result=simulate();
+  states=result.states;
+  buildHeaders();
+  goTo(0);
+  setTimeout(startPlay,600);
+},50);
+</script>
+
+</body>
+</html>
